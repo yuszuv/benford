@@ -1,12 +1,10 @@
 import re
 import numpy as np
-from collections import Counter
 import matplotlib.pyplot as plt
-import math
 
 def extract_sizes(log_content):
     # Regular expression to match sizes (handles MiB, KiB, etc.)
-    pattern = r'(\d+(?:\.\d+)?)\s*(:MiB|KiB)'
+    pattern = r'(\d+(?:\.\d+)?)\s*(MiB|KiB)'
     matches = re.findall(pattern, log_content)
     
     # Convert all sizes to same unit (KiB)
@@ -19,60 +17,54 @@ def extract_sizes(log_content):
     
     return sizes
 
-def analyze_distribution(sizes):
-    # Create two subplots
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
+def create_leading_digit_bins(max_order=3):
+    """
+    Create bin edges for leading digit histogram
+    max_order: maximum order of magnitude (e.g., 3 means up to 1000)
+    """
+    bins = []
+    for order in range(max_order + 1):  # For each order of magnitude (1, 10, 100, ...)
+        scale = 10 ** order
+        for digit in range(1, 10):  # For leading digits 1-9
+            bins.append(digit * scale)
+    bins.insert(0, 0)  # Add 0 as the first bin edge
+    return bins
+
+def analyze_leading_digits(sizes):
+    # Determine the maximum order of magnitude in the data
+    max_order = int(np.log10(max(sizes))) + 1
     
-    # Plot 1: Histogram with logarithmic scale
-    ax1.hist(sizes, bins=50, edgecolor='black')
-    ax1.set_xscale('log')
-    ax1.set_title('Distribution of Package Sizes (Log Scale)')
-    ax1.set_xlabel('Size (KiB)')
-    ax1.set_ylabel('Frequency')
-    ax1.grid(True)
+    # Create bins based on leading digits
+    bins = create_leading_digit_bins(max_order)
     
-    # Plot 2: Histogram of first digits with Benford's Law comparison
-    first_digits = [int(str(float(size)).replace('.', '')[0]) for size in sizes]
-    digit_counts = Counter(first_digits)
+    # Create the histogram
+    plt.figure(figsize=(15, 6))
+    plt.hist(sizes, bins=bins, edgecolor='black')
+    plt.xscale('log')  # Use log scale for x-axis
     
-    # Calculate percentages
-    total = len(first_digits)
-    actual_freq = {d: (digit_counts.get(d, 0) / total) * 100 for d in range(1, 10)}
+    # Customize the plot
+    plt.title('Package Size Distribution by Leading Digit')
+    plt.xlabel('Size (KiB)')
+    plt.ylabel('Frequency')
+    plt.grid(True, which="both", ls="-", alpha=0.2)
     
-    # Benford's Law expected frequencies
-    benford = {
-        1: 30.1, 2: 17.6, 3: 12.5, 4: 9.7, 5: 7.9,
-        6: 6.7, 7: 5.8, 8: 5.1, 9: 4.6
-    }
+    # Add vertical lines at major divisions (1, 10, 100, etc.)
+    for order in range(max_order + 1):
+        plt.axvline(10**order, color='r', linestyle='--', alpha=0.3)
     
-    # Prepare data for plotting
-    digits = list(range(1, 10))
-    actual_values = [actual_freq.get(d, 0) for d in digits]
-    expected_values = [benford[d] for d in digits]
+    # Customize x-axis ticks to show leading digits clearly
+    major_ticks = [10**i for i in range(max_order + 1)]
+    plt.xticks(major_ticks, [f'10^{i}' for i in range(max_order + 1)])
     
-    # Create bar plot
-    x = np.arange(len(digits))
-    width = 0.35
+    # Print bin counts
+    counts, _ = np.histogram(sizes, bins=bins)
+    print("\nBin Counts:")
+    print("Range (KiB) | Count")
+    print("-" * 25)
+    for i in range(len(counts)):
+        if counts[i] > 0:  # Only print non-empty bins
+            print(f"{bins[i]:<6.1f}-{bins[i+1]:<6.1f} | {counts[i]}")
     
-    ax2.bar(x - width/2, actual_values, width, label='Actual', color='skyblue')
-    ax2.bar(x + width/2, expected_values, width, label='Expected (Benford\'s Law)', color='lightgreen')
-    
-    ax2.set_xlabel('First Digit')
-    ax2.set_ylabel('Frequency (%)')
-    ax2.set_title('First Digit Distribution vs Benford\'s Law')
-    ax2.set_xticks(x)
-    ax2.set_xticklabels(digits)
-    ax2.legend()
-    ax2.grid(True)
-    
-    # Print numerical comparison
-    print("\nNumerical Comparison:")
-    print("Digit | Actual % | Expected %")
-    print("-" * 30)
-    for d in digits:
-        print(f"{d:5d} | {actual_freq.get(d, 0):8.1f} | {benford[d]:8.1f}")
-    
-    # Adjust layout and display
     plt.tight_layout()
     plt.show()
 
@@ -80,4 +72,4 @@ def analyze_distribution(sizes):
 with open('/home/jan/Desktop/benford/pacman.log', 'r') as file:
     content = file.read()
     sizes = extract_sizes(content)
-    analyze_distribution(sizes)
+    analyze_leading_digits(sizes)
