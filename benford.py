@@ -20,7 +20,7 @@ benford = {
 
 def extract_sizes(log_content):
     # Regular expression to match sizes (handles MiB, KiB, etc.)
-    pattern = r'(\d+(?:\.\d+)?)\s*(:MiB|KiB)'
+    pattern = r'(\d+(?:\.\d+)?)\s*(:MiB|KiB)(?!/s)'
     matches = re.findall(pattern, log_content)
     
     # Convert all sizes to same unit (KiB)

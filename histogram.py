@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 def extract_sizes(log_content):
     # Regular expression to match sizes (handles MiB, KiB, etc.)
-    pattern = r'(\d+(?:\.\d+)?)\s*(MiB|KiB)'
+    pattern = r'(\d+(?:\.\d+)?)\s*(MiB|KiB)(?!/s)'
     matches = re.findall(pattern, log_content)
     
     # Convert all sizes to same unit (KiB)
@@ -14,7 +14,6 @@ def extract_sizes(log_content):
         if unit == 'MiB':
             size = size * 1024
         sizes.append(size)
-    
     return sizes
 
 def create_leading_digit_bins(max_order=3):

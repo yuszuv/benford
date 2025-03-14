@@ -115,6 +115,7 @@ func main() {
 
 	// Regular expression to match sizes
 	sizeRegex := regexp.MustCompile(`(\d+(?:\.\d+)?)\s*(MiB|KiB)`)
+	speedRegex := regexp.MustCompile(`/s`)
 
 	// Store all sizes for multiple analyses
 	var sizes []float64
@@ -125,7 +126,7 @@ func main() {
 	for scanner.Scan() {
 		line := scanner.Text()
 		matches := sizeRegex.FindStringSubmatch(line)
-		if len(matches) >= 3 {
+		if len(matches) >= 3 && !speedRegex.MatchString(matches[0]) {
 			size, err := strconv.ParseFloat(matches[1], 64)
 			if err != nil {
 				continue
