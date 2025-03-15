@@ -8,9 +8,12 @@ State of the art as of: 2025/03/14
 
 _Inspired_ by watching pacman upgrade logs and having watched a [fantastic TV series about maths](https://www.arte.tv/de/videos/RC-021426/mathewelten/), I tried out, what [Cursor IDE](https://www.cursor.com/) is able to do and to help me to prove (or refute), that ["Benford's Law"](https://en.wikipedia.org/wiki/Benford%27s_law) holds for the package's file sizes.
 
-In a first session, the AI returned amazing plots ... that contained a major bug, because the script also recognizes `MiB/s` as a file size. In the next session I turned the AI generated (and modified) files to a jupyter notebook, that can be run to reproduce my results ... and see some amazing plots.
+In a first session, the AI returned amazing plots ... that contained a major bug, because the script also recognizes `MiB/s` as a file size, which I - in turn - noticed by running a AI generated jupyter notebook.
+
+This notebook can be used to produce these two insightfull plots
 
 ![](histogram.png)
+![](fits.png)
 
 **Note:** I did the part with the logarithmic scale, Cursor failed on that dramatically.
 
@@ -38,19 +41,19 @@ In previous chat (whose history I have delete unfortunatley) i explored a pacman
 
 help me to turn my results into a jupyter notebook.
 
-> _returned more or less the complete notebook here_
+> returned _more or less the complete notebook here_
 
 there's a bug in the script. the regular expression also matches the the download speed (the column next to the size). correct this
 
-> _returned `pattern = r'(\d+(?:\.\d+)?)\s*(MiB|KiB)\s+[^\n]*$'`_
+> _`pattern = r'(\d+(?:\.\d+)?)\s*(MiB|KiB)\s+[^\n]*$'`_
 
 use a look ahead assertion instead
 
-> _returned `pattern = r'(\d+(?:\.\d+)?)\s*(MiB|KiB)(?=\s+\d+(?:\.\d+)?\s*MiB/s)'`_
+> _`pattern = r'(\d+(?:\.\d+)?)\s*(MiB|KiB)(?=\s+\d+(?:\.\d+)?\s*MiB/s)'`_
 
 use a negative look ahead asseration to match any but "MiB" followed by "/s"
 
-> _returned `pattern = r'(\d+(?:\.\d+)?)\s*(MiB|KiB)(?!\s+MiB/s)'`_
+> _`pattern = r'(\d+(?:\.\d+)?)\s*(MiB|KiB)(?!\s+MiB/s)'`_
 
 did you mean `pattern = r'(\d+(?:\.\d+)?)\s\*(MiB|KiB)(?!/s)'`?
 
@@ -58,12 +61,10 @@ did you mean `pattern = r'(\d+(?:\.\d+)?)\s\*(MiB|KiB)(?!/s)'`?
 
 add this negative look ahead assertion to the go version
 
-> _returned `sizeRegex := regexp.MustCompile(`(\d+(?:\.\d+)?)\s\*(MiB|KiB)(?!/s)`)`, which [doesn't work](https://stackoverflow.com/questions/26771592/negative-look-ahead-in-go-regular-expressions)_
+> _`sizeRegex := regexp.MustCompile(`(\d+(?:\.\d+)?)\s\*(MiB|KiB)(?!/s)`)`, which [doesn't work](https://stackoverflow.com/questions/26771592/negative-look-ahead-in-go-regular-expressions)_
 
 this returns: panic: regexp: Compile(`(\d+(?:\.\d+)?)\s*(MiB|KiB)(?!\/s)`): error parsing regexp: invalid or unsupported Perl syntax: `(?!`
 
-> _returns_
->
 > ```
 >    sizeRegex := regexp.MustCompile(`(\d+(?:\.\d+)?)\s*(MiB|KiB)`)
 >    speedRegex := regexp.MustCompile(`/s`)
@@ -72,5 +73,4 @@ this returns: panic: regexp: Compile(`(\d+(?:\.\d+)?)\s*(MiB|KiB)(?!\/s)`): erro
 >
 >        if len(matches) >= 3 && !speedRegex.MatchString(matches[0]) {
 >    ...
-> ```
 
